@@ -9,8 +9,8 @@ app = fastapi.FastAPI()
 
 
 def configure():
-    configure_routing()
     configure_api_keys()
+    configure_routing()
 
 def configure_routing():
     app.include_router(citas_api.router)
@@ -24,6 +24,5 @@ def configure_api_keys():
     with open("settings.json") as fin:
         settings = json.load(fin)
         dentalink_service.api_key = settings.get("api_key")
-
 
 configure()
