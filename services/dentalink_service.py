@@ -4,12 +4,15 @@ from models.citas_query_params import CitasQueryParams
 from models.validation_error import ValidationError
 from infrastructure import citas_cache
 from utilities.build_query_string import build_query_string
+from utilities.validate_query_params import validate_params
 from datetime import datetime
 
 api_key: Optional[str] = None
 base_url: str = "https://api.dentalink.healthatom.com/api/v1/citas"
 
 async def get_appointments(q_params: CitasQueryParams) -> List[dict]:
+
+    validate_params(q_params)
 
     if cache_data := citas_cache.get_appointments(q_params):
         return cache_data
