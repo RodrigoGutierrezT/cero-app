@@ -6,7 +6,7 @@ from infrastructure import citas_cache
 from utilities.build_query_string import build_query_string
 from utilities.validate_query_params import validate_params
 from utilities.validate_positive_int import validate_positive_int
-from utilities.validate_appointments import validate_cancel_appointment
+from utilities.validate_appointments import validate_cancel_appointment, validate_confirm_appointment
 from datetime import datetime
 
 api_key: Optional[str] = None
@@ -29,7 +29,6 @@ async def get_appointments(q_params: CitasQueryParams) -> List[dict]:
         params["id_sucursal"] = {"eq": q_params.id_sucursal}
 
     url = base_url+build_query_string(params)
-    print(url)
     
     async with httpx.AsyncClient() as client:
         data = []
@@ -85,7 +84,6 @@ async def cancel_appointment(id_estado: int, appointment: dict):
     validate_cancel_appointment(id_estado,appointment)
 
     url = base_url + f"/{appointment.get('id')}"
-    print(url)
 
     async with httpx.AsyncClient() as client:
         headers: dict = {"Authorization": "Token " + api_key}
@@ -96,3 +94,21 @@ async def cancel_appointment(id_estado: int, appointment: dict):
             return res_json.get("data", None)
         else:
             raise ValidationError(resp.text, status_code=resp.status_code)
+
+
+async def confirm_appointment(id_estado: int, appointment: dict):
+    
+    validate_confirm_appointment(id_estado,appointment)
+
+    url = base_url + f"/{appointment.get('id')}"
+
+    async with httpx.AsyncClient() as client:
+        headers: dict = {"Authorization": "Token " + api_key}
+        resp = await client.put(url, headers=headers, json={"id_estado": id_estado})
+        
+        if resp.status_code == 200 or resp.status_code == 201:
+            res_json = resp.json()
+            return res_json.get("data", None)
+        else:
+            raise ValidationError(resp.text, status_code=resp.status_code)
+
