@@ -2,6 +2,7 @@ from typing import Optional, List
 import httpx
 from models.citas_query_params import CitasQueryParams
 from models.validation_error import ValidationError
+from infrastructure import citas_cache
 from utilities.build_query_string import build_query_string
 from datetime import datetime
 
@@ -9,6 +10,9 @@ api_key: Optional[str] = None
 base_url: str = "https://api.dentalink.healthatom.com/api/v1/citas"
 
 async def get_appointments(q_params: CitasQueryParams) -> List[dict]:
+
+    if cache_data := citas_cache.get_appointments(q_params):
+        return cache_data
 
     params = {
         "fecha": {"gte": q_params.fecha_inicio.strftime("%Y-%m-%d")}
@@ -29,7 +33,6 @@ async def get_appointments(q_params: CitasQueryParams) -> List[dict]:
         while True:
             resp: httpx.Response = await client.get(url, headers=headers)
             request = resp.request
-            print(request.url)
 
             if resp.status_code == 200:
                 res_json = resp.json()
@@ -49,6 +52,8 @@ async def get_appointments(q_params: CitasQueryParams) -> List[dict]:
         
         if q_params.fecha_termino and data:
             filtered_data = [item for item in data if datetime.strptime(item["fecha"], "%Y-%m-%d").date() <= q_params.fecha_termino]
+            citas_cache.set_appointments(q_params, filtered_data)
             return filtered_data
 
+        citas_cache.set_appointments(q_params, data)
         return data
